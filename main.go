@@ -169,11 +169,11 @@ func println(o ...interface{}) {
 
 func getDBConfig() {
         fin,err := os.Open(*dbConfigFile)
-        defer fin.Close()
         if err != nil {
                 fmt.Println(*dbConfigFile,err)
                 return
         }
+	defer fin.Close()
         br := bufio.NewReader(fin)
         re, _ := regexp.Compile("\\s+")
    for{
