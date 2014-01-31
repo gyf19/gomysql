@@ -18,6 +18,7 @@ var (
         dbConfigFile      = flag.String("h", "", "db serverList path")
         sqlFile   = flag.String("s", "", "run sql file")
 	serverName = flag.String("n", "", "Only run a Mysql server (OPTIONAL)")
+	showTitle = flag.Bool("t", true, "Whether to display the title (OPTIONAL)")
 )
 
 type dbConfig struct {
@@ -57,6 +58,8 @@ func main() {
         if *serverName != "" {
                 isAllServer = false
         }
+	
+
 	dbConfigs = make(map[string]*dbConfig)
 
         getDBConfig()
@@ -101,8 +104,7 @@ func awaitForCloseResult(dones <-chan struct{}) {
     for {
         select {
 	    case db := <-results:
-                fmt.Println( "===========  "+db.name+"  =============")
-        	fmt.Println(db.result)
+		printResult(db);
             case <-dones:
                 working -= 1
                 if working <= 0 {
@@ -115,6 +117,20 @@ func awaitForCloseResult(dones <-chan struct{}) {
         }
     }
 }
+
+func printResult(db Result) {
+	if *showTitle {
+		fmt.Println( "===========  "+db.name+"  =============")
+		fmt.Println(db.result)
+	} else {
+		//fmt.Println(strings.LastIndex(db.result, "\n"))
+		//fmt.Println(len(db.result))
+		if len(db.result) > 0 {
+			fmt.Println(db.result)
+		}
+	}
+}
+
 
 func (db *dbConfig) Do() {
         sql := "mysql -u"+db.user+" -p"+db.password+" -h"+db.ip+" -P"+db.port+" -N < "+ *sqlFile
@@ -156,6 +172,14 @@ func (db *dbConfig) Do() {
 		results <- Result{db.name,err.Error()}
                 return
         }
+	
+	if *showTitle == false {
+		index := len(bytes)-1
+		if index >=0 {
+			 bytes[index] = ' '
+		} 
+	}
+
 	result := string(bytes)
         db.result  = result
 	results <- Result{db.name,db.result}
